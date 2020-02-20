@@ -42,7 +42,7 @@ namespace CheckLeakedPassword
             {
                 buttonCheckAtPwnedPasswords_Click(sender, e);
                 e.Handled = true;
-                e.SuppressKeyPress = true;
+                e.SuppressKeyPress = true; // Suppress system beep
             }
         }
 
@@ -50,10 +50,9 @@ namespace CheckLeakedPassword
         {
             buttonResult.BackColor = SystemColors.Control;
             buttonResult.Text = "";
+
             var sha1 = SHA1.Create();
             var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(textBoxPassword.Text));
-            //string a = System.Text.Encoding.Default.GetString(hash);
-            //string b = hash.ToString();
             StringBuilder sha1Result = new StringBuilder(hash.Length * 2);
             foreach (byte b in hash)
             {
@@ -62,28 +61,28 @@ namespace CheckLeakedPassword
             labelSHA1.Text = sha1Result.ToString().ToUpper();
 
             CallPwnedPasswordsApi(sha1Result);
-            
-
         }
 
+        /// <summary>
+        /// API at PwnedPsswords.com is called with first 5 chars of SHA1-hash
+        /// Result hashes are searched through for original hash
+        /// </summary>
         private void CallPwnedPasswordsApi(StringBuilder sha1Result)
         {
-            string first5Chars = sha1Result.ToString(0, 5);
-            string last5Chars = sha1Result.ToString(5, sha1Result.Length - 5);
+            string first5Chars = sha1Result.ToString(0, 5); // Only the first 5 chars are send to the API
+            string last35Chars = sha1Result.ToString(5, sha1Result.Length - 5); // results of API call only contain last 35 chars of hash
 
             IRestClient restClient = new RestClient();
             IRestRequest restRequest = new RestRequest(new Uri(new Uri("https://api.pwnedpasswords.com/range/"), first5Chars));
-            //IRestResponse restResponse = restClient.Get(restRequest);
-            //List<string> response = restClient.Execute<List<string>>(restRequest).Data;
-            string response2 = restClient.Execute<string>(restRequest).Content.ToString();
+            string response = restClient.Execute<string>(restRequest).Content.ToString();
             string[] separators = new string[] { "\r\n" };
-            var abc = response2.Split(separators, StringSplitOptions.None);
+            var hashes = response.Split(separators, StringSplitOptions.None);
 
             bool leaked = false;
-            foreach (string hash in abc)
+            foreach (string hash in hashes)
             {
                 string newHash = hash.Substring(0, hash.IndexOf(":"));
-                if (newHash.ToLower() == last5Chars.ToLower())
+                if (newHash.ToLower() == last35Chars.ToLower())
                 {
                     buttonResult.BackColor = Color.Red;
                     buttonResult.Text = "Password is leaked";
@@ -96,24 +95,6 @@ namespace CheckLeakedPassword
                 buttonResult.BackColor = Color.Green;
                 buttonResult.Text = "Password is NOT leaked";
             }
-
-
-            //using (HttpClient client = new HttpClient())
-            //{
-            //    client.BaseAddress = new Uri(new Uri("https://api.pwnedpasswords.com/range/"), first5Chars);
-            //    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-
-            //    HttpResponseMessage httpResponse = client.GetAsync(client.BaseAddress).Result;
-            //    if (httpResponse.IsSuccessStatusCode)
-            //    {
-            //        var data = httpResponse.Content.ReadAsByteArrayAsync().Result;
-            //        foreach (var item in data)
-            //        {
-
-            //        }
-            //    }
-
-            //}
         }
     }
 }
