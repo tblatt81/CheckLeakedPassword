@@ -20,6 +20,8 @@ namespace CheckLeakedPassword
         {
             InitializeComponent();
 
+            label4.BackColor = System.Drawing.Color.Transparent;
+
             textBoxPassword.KeyDown += TextBoxPassword_KeyDown;
             checkBoxHidePassword.CheckedChanged += CheckBoxHidePassword_CheckedChanged;
         }
@@ -82,10 +84,12 @@ namespace CheckLeakedPassword
             foreach (string hash in hashes)
             {
                 string newHash = hash.Substring(0, hash.IndexOf(":"));
+                int numberOfOccurrences = Convert.ToInt32(hash.Substring(hash.IndexOf(":") + 1));
                 if (newHash.ToLower() == last35Chars.ToLower())
                 {
                     buttonResult.BackColor = Color.Red;
                     buttonResult.Text = "Password is leaked";
+                    labelNumberOccurrences.Text = numberOfOccurrences.ToString("N0");
                     leaked = true;
                 }
             }
@@ -94,6 +98,7 @@ namespace CheckLeakedPassword
             {
                 buttonResult.BackColor = Color.Green;
                 buttonResult.Text = "Password is NOT leaked";
+                labelNumberOccurrences.Text = "0";
             }
         }
     }
